@@ -1,0 +1,23 @@
+name: Rangsystem
+version: 1.0.0
+main: Rangsystem\Main
+api: 5.0.0
+author: LordHango44
+description: Ein Rangsystem mit Permissions und individuellem Prefix/Suffix
+commands:
+  setgroup:
+    description: Weist einem Spieler eine Gruppe zu
+    usage: /setgroup <Spieler> <Gruppe>
+  addperm:
+    description: Fügt einer Gruppe eine Permission hinzu
+    usage: /addperm <Gruppe> <Permission>
+  removeperm:
+    description: Entfernt eine Permission von einer Gruppe
+    usage: /removeperm <Gruppe> <Permission>
+permissions:
+  rangsystem.setgroup:
+    default: op
+  rangsystem.addperm:
+    default: op
+  rangsystem.removeperm:
+    default: op
