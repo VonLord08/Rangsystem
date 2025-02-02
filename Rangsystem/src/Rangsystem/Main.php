@@ -14,6 +14,7 @@ use pocketmine\utils\Config;
 class Main extends PluginBase implements Listener {
 
     private Config $permissionsConfig;
+
     private array $defaultGroups = [
         "Spieler" => ["prefix" => "§7Spieler", "suffix" => "", "permissions" => []],
         "Premium" => ["prefix" => "§6Premium", "suffix" => "", "permissions" => []],
@@ -38,19 +39,18 @@ class Main extends PluginBase implements Listener {
     public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        
+
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
         
         $group = $this->permissionsConfig->get($name);
-        if (isset($this->defaultGroups[$group])) {
-            $prefix = $this->defaultGroups[$group]["prefix"];
-            $suffix = $this->defaultGroups[$group]["suffix"];
-            $player->setDisplayName("$prefix : " . $player->getName());
-            $player->setNameTag("$prefix : " . $player->getName() . " $suffix");
-        }
+        $prefix = $this->defaultGroups[$group]["prefix"];
+        $suffix = $this->defaultGroups[$group]["suffix"];
+        
+        $player->setDisplayName("$prefix : " . $player->getName());
+        $player->setNameTag("$prefix : " . $player->getName() . " " . $suffix);
     }
 
     public function onChat(PlayerChatEvent $event): void {
@@ -59,13 +59,10 @@ class Main extends PluginBase implements Listener {
         $message = $event->getMessage();
         $group = $this->permissionsConfig->get($name, "Spieler");
 
-        if (isset($this->defaultGroups[$group])) {
-            $prefix = $this->defaultGroups[$group]["prefix"];
-            $color = (strpos($group, "Moderator+") !== false || strpos($group, "Supporter+") !== false) ? "§2" : "§4";
-            $plus = strpos($group, "+") !== false ? "§4+" : "";
-            $messageColor = isset($this->defaultGroups[$group]["suffix"]) ? "§f" : "§7";
-            
-            $event->setFormat("$prefix$plus : $name > $messageColor$message");
-        }
+        $prefix = $this->defaultGroups[$group]["prefix"];
+        
+        $color = in_array($group, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
+        
+        $event->setFormat("$prefix : $name > $color$message");
     }
 }
