@@ -1,6 +1,6 @@
 <?php
 
-namespace Ranksystem;
+namespace Rangsystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
@@ -10,6 +10,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
+use pocketmine\Server;
 
 class Main extends PluginBase implements Listener {
     
@@ -55,7 +56,13 @@ class Main extends PluginBase implements Listener {
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        
+        // Nachricht manuell senden, anstatt setFormat() zu nutzen
+        $message = "$prefix : $name > $chatColor" . $event->getMessage();
+        Server::getInstance()->broadcastMessage($message);
+
+        // Verhindert die doppelte Nachricht
+        $event->cancel();
     }
 
     private function updateNametag(Player $player): void {
