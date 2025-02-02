@@ -38,28 +38,35 @@ class Main extends PluginBase implements Listener {
     public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
+
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
-        $this->updateNametag($player);
+
+        $group = $this->permissionsConfig->get($name);
+        if (!isset($this->defaultGroups[$group])) {
+            $group = "Spieler";
+        }
+
+        $prefix = $this->defaultGroups[$group]["prefix"];
+        $suffix = $this->defaultGroups[$group]["suffix"];
+        
+        $player->setNameTag("$prefix : $name $suffix");
     }
 
     public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
-        $prefix = $this->defaultGroups[$group]["prefix"];
-        $suffix = $this->defaultGroups[$group]["suffix"];
-        $chatColor = in_array($group, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
-    }
 
-    private function updateNametag(Player $player): void {
-        $name = $player->getName();
-        $group = $this->permissionsConfig->get($name, "Spieler");
+        if (!isset($this->defaultGroups[$group])) {
+            $group = "Spieler";
+        }
+
         $prefix = $this->defaultGroups[$group]["prefix"];
-        $suffix = $this->defaultGroups[$group]["suffix"];
-        $player->setNameTag("$prefix : $name $suffix");
+        $chatColor = in_array($group, ["Spieler", "Premium", "Friend"]) ? "§7" : "§f";
+        
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
     }
 }
