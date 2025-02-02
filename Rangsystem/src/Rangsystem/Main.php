@@ -32,16 +32,14 @@ class Main extends PluginBase implements Listener {
 
     public function onEnable(): void {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        @mkdir($this->getDataFolder());
-        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML, ["players" => []]);
+        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
     }
 
     public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
-        $players = $this->permissionsConfig->get("players", []);
-        if (!isset($players[$player->getName()])) {
-            $players[$player->getName()] = "Spieler";
-            $this->permissionsConfig->set("players", $players);
+        $name = $player->getName();
+        if (!$this->permissionsConfig->exists($name)) {
+            $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
         $this->updateNametag($player);
@@ -49,21 +47,19 @@ class Main extends PluginBase implements Listener {
 
     public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
-        $players = $this->permissionsConfig->get("players", []);
-        $group = $players[$player->getName()] ?? "Spieler";
-        $prefix = $this->defaultGroups[$group]["prefix"] ?? "§7Spieler";
-        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-        
-        $messageColor = (strpos($suffix, "[Team]") !== false) ? "§f" : "§7";
-        
-        $event->setFormat("$prefix : " . $player->getName() . " > " . $messageColor . $event->getMessage());
+        $name = $player->getName();
+        $group = $this->permissionsConfig->get($name, "Spieler");
+        $prefix = $this->defaultGroups[$group]["prefix"];
+        $suffix = $this->defaultGroups[$group]["suffix"];
+        $chatColor = in_array($group, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
     }
 
     private function updateNametag(Player $player): void {
-        $players = $this->permissionsConfig->get("players", []);
-        $group = $players[$player->getName()] ?? "Spieler";
-        $prefix = $this->defaultGroups[$group]["prefix"] ?? "§7Spieler";
-        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-        $player->setNameTag("$prefix : " . $player->getName() . " $suffix");
+        $name = $player->getName();
+        $group = $this->permissionsConfig->get($name, "Spieler");
+        $prefix = $this->defaultGroups[$group]["prefix"];
+        $suffix = $this->defaultGroups[$group]["suffix"];
+        $player->setNameTag("$prefix : $name $suffix");
     }
 }
