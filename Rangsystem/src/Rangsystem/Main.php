@@ -31,7 +31,7 @@ class Main extends PluginBase implements Listener {
     ];
 
     public function onEnable(): void {
-        $this->getLogger()->info("Rangsystem wurde aktiviert!");
+        $this->getLogger()->info("Rangsystem aktiviert!");
         $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
         
         if (!$this->permissionsConfig->exists("groups")) {
@@ -48,31 +48,40 @@ class Main extends PluginBase implements Listener {
 
         $groups = $this->permissionsConfig->get("groups", []);
         $players = $this->permissionsConfig->get("players", []);
-        
+
+        if (!isset($players[$name])) {
+            $players[$name] = ["group" => "Spieler"];
+            $this->permissionsConfig->set("players", $players);
+            $this->permissionsConfig->save();
+        }
+
         $playerGroup = $players[$name]["group"] ?? "Spieler";
         
         if (isset($groups[$playerGroup])) {
             $prefix = $groups[$playerGroup]["prefix"];
             $suffix = $groups[$playerGroup]["suffix"];
-            $player->setDisplayName("$prefix : $name");
+            
             $player->setNameTag("$prefix : $name $suffix");
         }
     }
 
-    public function onPlayerChat(PlayerChatEvent $event): void {
+    public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        $message = $event->getMessage();
-
+        
         $groups = $this->permissionsConfig->get("groups", []);
         $players = $this->permissionsConfig->get("players", []);
-        
         $playerGroup = $players[$name]["group"] ?? "Spieler";
         
         if (isset($groups[$playerGroup])) {
             $prefix = $groups[$playerGroup]["prefix"];
-            $chatColor = (strpos($prefix, "§c[Team]") !== false) ? "§f" : "§7";
-            $event->setFormat("$prefix : $name > $chatColor$message");
+            $suffix = $groups[$playerGroup]["suffix"];
+            
+            // Prüfen, ob der Spieler ein Teammitglied ist
+            $isTeam = $suffix === "§c[Team]";
+            $messageColor = $isTeam ? "§f" : "§7"; 
+            
+            $event->setNewMessage("$prefix : $name > $messageColor" . $event->getMessage());
         }
     }
 }
