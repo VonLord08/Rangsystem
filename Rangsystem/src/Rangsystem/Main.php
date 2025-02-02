@@ -5,6 +5,7 @@ namespace Rangsystem;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\server\ServerChatEvent;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -73,17 +74,22 @@ class Main extends PluginBase implements Listener {
             // Name über dem Kopf
             $player->setDisplayName("$prefix : $name");
             $player->setNameTag("$prefix : $name $suffix");
-
-            // Chat-Format setzen
-            $this->getServer()->getPluginManager()->registerEvent(
-                \pocketmine\event\player\PlayerChatEvent::class,
-                function (\pocketmine\event\player\PlayerChatEvent $event) use ($chatColor) {
-                    $event->setFormat($event->getPlayer()->getDisplayName() . " > " . $chatColor . $event->getMessage());
-                },
-                \pocketmine\event\EventPriority::NORMAL,
-                $this
-            );
         }
+    }
+
+    public function onChat(ServerChatEvent $event): void {
+        $player = $event->getPlayer();
+        $name = $player->getName();
+
+        $players = $this->permissionsConfig->get("players", []);
+        $groups = $this->permissionsConfig->get("groups", []);
+
+        $playerGroup = $players[$name]["group"] ?? "Spieler";
+        $prefix = $groups[$playerGroup]["prefix"] ?? "§7Spieler";
+        $chatColor = in_array($playerGroup, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
+
+        // Format setzen
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
