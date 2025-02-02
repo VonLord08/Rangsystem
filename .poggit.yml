@@ -1,0 +1,8 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/VonLord08/Rangsystem
+build-by-default: true
+branches:
+- main
+projects:
+  Rangsystem:
+    path: Rangsystem/
+...
