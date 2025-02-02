@@ -31,57 +31,41 @@ class Main extends PluginBase implements Listener {
     ];
 
     public function onEnable(): void {
-        $this->getLogger()->info("Rangsystem aktiviert!");
-        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
-        
-        if (!$this->permissionsConfig->exists("groups")) {
-            $this->permissionsConfig->set("groups", $this->defaultGroups);
-            $this->permissionsConfig->save();
-        }
-        
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML, []);
     }
 
-    public function onPlayerJoin(PlayerJoinEvent $event): void {
+    public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-
-        $groups = $this->permissionsConfig->get("groups", []);
-        $players = $this->permissionsConfig->get("players", []);
-
-        if (!isset($players[$name])) {
-            $players[$name] = ["group" => "Spieler"];
-            $this->permissionsConfig->set("players", $players);
+        
+        if (!$this->permissionsConfig->exists($name)) {
+            $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
-
-        $playerGroup = $players[$name]["group"] ?? "Spieler";
         
-        if (isset($groups[$playerGroup])) {
-            $prefix = $groups[$playerGroup]["prefix"];
-            $suffix = $groups[$playerGroup]["suffix"];
-            
-            $player->setNameTag("$prefix : $name $suffix");
+        $group = $this->permissionsConfig->get($name);
+        if (isset($this->defaultGroups[$group])) {
+            $prefix = $this->defaultGroups[$group]["prefix"];
+            $suffix = $this->defaultGroups[$group]["suffix"];
+            $player->setDisplayName("$prefix : " . $player->getName());
+            $player->setNameTag("$prefix : " . $player->getName() . " $suffix");
         }
     }
 
     public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        
-        $groups = $this->permissionsConfig->get("groups", []);
-        $players = $this->permissionsConfig->get("players", []);
-        $playerGroup = $players[$name]["group"] ?? "Spieler";
-        
-        if (isset($groups[$playerGroup])) {
-            $prefix = $groups[$playerGroup]["prefix"];
-            $suffix = $groups[$playerGroup]["suffix"];
+        $message = $event->getMessage();
+        $group = $this->permissionsConfig->get($name, "Spieler");
+
+        if (isset($this->defaultGroups[$group])) {
+            $prefix = $this->defaultGroups[$group]["prefix"];
+            $color = (strpos($group, "Moderator+") !== false || strpos($group, "Supporter+") !== false) ? "§2" : "§4";
+            $plus = strpos($group, "+") !== false ? "§4+" : "";
+            $messageColor = isset($this->defaultGroups[$group]["suffix"]) ? "§f" : "§7";
             
-            // Prüfen, ob der Spieler ein Teammitglied ist
-            $isTeam = $suffix === "§c[Team]";
-            $messageColor = $isTeam ? "§f" : "§7"; 
-            
-            $event->setNewMessage("$prefix : $name > $messageColor" . $event->getMessage());
+            $event->setFormat("$prefix$plus : $name > $messageColor$message");
         }
     }
 }
