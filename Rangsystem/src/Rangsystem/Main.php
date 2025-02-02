@@ -38,16 +38,17 @@ class Main extends PluginBase implements Listener {
     public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-
+        
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
 
-        $group = $this->permissionsConfig->get($name, "Spieler");
+        $group = $this->permissionsConfig->get($name);
         $prefix = $this->defaultGroups[$group]["prefix"];
         $suffix = $this->defaultGroups[$group]["suffix"];
 
+        $player->setDisplayName("$prefix : $name");
         $player->setNameTag("$prefix : $name $suffix");
     }
 
@@ -55,11 +56,34 @@ class Main extends PluginBase implements Listener {
         $player = $event->getPlayer();
         $name = $player->getName();
         $message = $event->getMessage();
+        
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"];
         
-        $chatColor = in_array($group, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
-
+        $chatColor = (isset($this->defaultGroups[$group]["suffix"]) && !empty($this->defaultGroups[$group]["suffix"])) ? "§f" : "§7";
+        
         $event->setFormat("$prefix : $name > $chatColor$message");
+    }
+
+    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
+        if ($command->getName() === "setgroup" && $sender instanceof Player) {
+            if (count($args) < 2) {
+                $sender->sendMessage("§cUsage: /setgroup <Spieler> <Gruppe>");
+                return false;
+            }
+            
+            $targetName = $args[0];
+            $group = $args[1];
+            
+            if (!isset($this->defaultGroups[$group])) {
+                $sender->sendMessage("§cDiese Gruppe existiert nicht!");
+                return false;
+            }
+            
+            $this->permissionsConfig->set($targetName, $group);
+            $this->permissionsConfig->save();
+            $sender->sendMessage("§aGruppe von $targetName geändert zu $group!");
+        }
+        return true;
     }
 }
