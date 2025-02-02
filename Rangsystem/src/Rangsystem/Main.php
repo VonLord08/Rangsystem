@@ -4,14 +4,12 @@ namespace Rangsystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerChatEvent;
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
 
 class Main extends PluginBase implements Listener {
+
     private Config $permissionsConfig;
     private array $defaultGroups = [
         "Spieler" => ["prefix" => "§7Spieler", "suffix" => "", "permissions" => []],
@@ -31,47 +29,28 @@ class Main extends PluginBase implements Listener {
 
     public function onEnable(): void {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        @mkdir($this->getDataFolder());
-        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
-    }
-
-    public function onJoin(PlayerJoinEvent $event): void {
-        $player = $event->getPlayer();
-        $name = $player->getName();
-
-        if (!$this->permissionsConfig->exists($name)) {
-            $this->permissionsConfig->set($name, "Spieler");
-            $this->permissionsConfig->save();
-        }
-        
-        $group = $this->permissionsConfig->get($name);
-        $this->updatePlayerDisplay($player, $group);
+        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML, []);
     }
 
     public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        $group = $this->permissionsConfig->get($name, "Spieler");
-
-        if (!isset($this->defaultGroups[$group])) {
-            $group = "Spieler";
-        }
-        
-        $prefix = $this->defaultGroups[$group]["prefix"];
-        $chatColor = isset($this->defaultGroups[$group]["suffix"]) && !empty($this->defaultGroups[$group]["suffix"]) ? "§f" : "§7";
-        
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
-    }
-
-    private function updatePlayerDisplay(Player $player, string $group): void {
-        if (!isset($this->defaultGroups[$group])) {
-            $group = "Spieler";
-        }
+        $group = $this->getPlayerGroup($player);
         
         $prefix = $this->defaultGroups[$group]["prefix"];
         $suffix = $this->defaultGroups[$group]["suffix"];
 
-        $player->setDisplayName("$prefix : " . $player->getName());
-        $player->setNameTag("$prefix : " . $player->getName() . " $suffix");
+        $chatColor = in_array($group, ["Spieler", "Premium", "Friend"]) ? "§7" : "§f";
+        
+        // **Neues Chat-Format**
+        $formattedMessage = "$prefix : $name > $chatColor" . $event->getMessage();
+        
+        $event->setMessage($formattedMessage);
+    }
+
+    private function getPlayerGroup(Player $player): string {
+        $name = $player->getName();
+        $permissions = $this->permissionsConfig->get("players", []);
+        return $permissions[$name]["group"] ?? "Spieler";
     }
 }
