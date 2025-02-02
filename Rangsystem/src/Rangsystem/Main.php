@@ -1,11 +1,13 @@
 <?php
 
-namespace Rangsystem;
+namespace Ranksystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\server\MessageSendEvent;
+use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
 
@@ -27,32 +29,66 @@ class Main extends PluginBase implements Listener {
         "Head-Admin" => ["prefix" => "§4Head-Admin", "suffix" => "§c[Team]", "permissions" => []],
         "Leitung" => ["prefix" => "§4Leitung", "suffix" => "§c[Team]", "permissions" => []]
     ];
-    
+
     public function onEnable(): void {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
+        @mkdir($this->getDataFolder());
+        $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML, []);
     }
-    
-    public function onPlayerJoin(PlayerJoinEvent $event): void {
+
+    public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        
+
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
+        $this->updateNametag($player);
     }
-    
-    public function onChat(MessageSendEvent $event): void {
-        $player = $event->getSender();
-        if (!$player instanceof Player) return;
-        
+
+    public function onChat(PlayerChatEvent $event): void {
+        $player = $event->getPlayer();
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
-        $prefix = $this->defaultGroups[$group]["prefix"];
-        $suffix = $this->defaultGroups[$group]["suffix"];
+        $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
+
+        $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+    }
+
+    private function updateNametag(Player $player): void {
+        $name = $player->getName();
+        $group = $this->permissionsConfig->get($name, "Spieler");
+        $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
+        $player->setNameTag("$prefix : $name $suffix");
+    }
+
+    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
+        if (!$sender instanceof Player) return false;
         
-        $chatColor = in_array($group, ["Spieler", "Premium", "Friend"]) ? "§7" : "§f";
-        $event->setMessage("$prefix : $name $suffix > $chatColor" . $event->getMessage());
+        if ($command->getName() === "setgroup" && count($args) >= 2) {
+            $targetName = $args[0];
+            $newGroup = $args[1];
+            
+            if (!isset($this->defaultGroups[$newGroup])) {
+                $sender->sendMessage("§cDiese Gruppe existiert nicht.");
+                return false;
+            }
+            
+            $this->permissionsConfig->set($targetName, $newGroup);
+            $this->permissionsConfig->save();
+            
+            $target = $this->getServer()->getPlayerExact($targetName);
+            if ($target) {
+                $this->updateNametag($target);
+            }
+            
+            $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
+            return true;
+        }
+        return false;
     }
 }
