@@ -10,6 +10,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
+use pocketmine\Server;
 
 class Main extends PluginBase implements Listener {
     
@@ -55,7 +56,10 @@ class Main extends PluginBase implements Listener {
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $message = "$prefix : $name > $chatColor" . $event->getMessage();
+        
+        Server::getInstance()->broadcastMessage($message);
+        $event->cancel();
     }
 
     private function updateNametag(Player $player): void {
