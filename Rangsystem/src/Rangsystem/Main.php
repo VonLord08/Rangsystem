@@ -55,7 +55,10 @@ class Main extends PluginBase implements Listener {
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $message = "$prefix : $name > $chatColor" . $event->getMessage();
+
+        $event->cancel(); // Standardausgabe des Chats verhindern
+        $this->getServer()->broadcastMessage($message);
     }
 
     private function updateNametag(Player $player): void {
