@@ -38,16 +38,16 @@ class Main extends PluginBase implements Listener {
     public function onJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        
+
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
-        
-        $group = $this->permissionsConfig->get($name);
+
+        $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"];
         $suffix = $this->defaultGroups[$group]["suffix"];
-        
+
         $player->setNameTag("$prefix : $name $suffix");
     }
 
@@ -55,12 +55,11 @@ class Main extends PluginBase implements Listener {
         $player = $event->getPlayer();
         $name = $player->getName();
         $message = $event->getMessage();
-        
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"];
         
-        $chatColor = (isset($this->defaultGroups[$group]["suffix"]) && $this->defaultGroups[$group]["suffix"] === "§c[Team]") ? "§f" : "§7";
-        
+        $chatColor = in_array($group, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
+
         $event->setFormat("$prefix : $name > $chatColor$message");
     }
 }
