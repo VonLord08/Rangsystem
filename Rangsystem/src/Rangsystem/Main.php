@@ -5,6 +5,7 @@ namespace Rangsystem;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -63,10 +64,29 @@ class Main extends PluginBase implements Listener {
         if (isset($groups[$playerGroup])) {
             $prefix = $groups[$playerGroup]["prefix"];
             $suffix = $groups[$playerGroup]["suffix"];
-            
+
+            // Setze DisplayName für Chat
             $player->setDisplayName("$prefix $name >");
+
+            // Setze NameTag (über Kopf)
             $player->setNameTag("$prefix $name $suffix");
         }
+    }
+
+    public function onPlayerChat(PlayerChatEvent $event): void {
+        $player = $event->getPlayer();
+        $name = $player->getName();
+        $message = $event->getMessage();
+
+        $players = $this->permissionsConfig->get("players", []);
+        $groups = $this->permissionsConfig->get("groups", []);
+        $playerGroup = $players[$name]["group"] ?? "Spieler";
+
+        $prefix = $groups[$playerGroup]["prefix"] ?? "";
+        $chatColor = (isset($groups[$playerGroup]) && strpos($groups[$playerGroup]["suffix"], "§c[Team]") !== false) ? "§f" : "§7";
+
+        // Setzt das neue Chat-Format
+        $event->setFormat("$prefix $name > $chatColor$message");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
