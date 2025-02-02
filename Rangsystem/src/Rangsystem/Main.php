@@ -66,9 +66,6 @@ class Main extends PluginBase implements Listener {
             $prefix = $groups[$playerGroup]["prefix"];
             $suffix = $groups[$playerGroup]["suffix"];
 
-            $teamRanks = ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"];
-            $chatColor = in_array($playerGroup, $teamRanks) ? "§f" : "§7";
-
             $player->setDisplayName("$prefix : $name");
             $player->setNameTag("$prefix : $name $suffix");
         }
@@ -85,8 +82,10 @@ class Main extends PluginBase implements Listener {
         $prefix = $groups[$playerGroup]["prefix"] ?? "§7Spieler";
         $message = $event->getMessage();
 
+        // Team-Ränge erhalten §f für Nachrichten, normale Spieler §7
         $chatColor = in_array($playerGroup, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
 
+        // Format: Prefix : Name > Nachricht
         $event->setFormat("$prefix : $name > $chatColor$message");
     }
 
