@@ -5,7 +5,7 @@ namespace Rangsystem;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\server\ServerChatEvent;
+use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -54,7 +54,6 @@ class Main extends PluginBase implements Listener {
         $groups = $this->permissionsConfig->get("groups", []);
         $players = $this->permissionsConfig->get("players", []);
 
-        // Standardgruppe setzen, falls Spieler noch keine hat
         if (!isset($players[$name])) {
             $players[$name] = ["group" => "Spieler"];
             $this->permissionsConfig->set("players", $players);
@@ -67,17 +66,15 @@ class Main extends PluginBase implements Listener {
             $prefix = $groups[$playerGroup]["prefix"];
             $suffix = $groups[$playerGroup]["suffix"];
 
-            // Format für den Chat
             $teamRanks = ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"];
-            $chatColor = in_array($playerGroup, $teamRanks) ? "§f" : "§7"; // Team weiß, andere grau
+            $chatColor = in_array($playerGroup, $teamRanks) ? "§f" : "§7";
 
-            // Name über dem Kopf
             $player->setDisplayName("$prefix : $name");
             $player->setNameTag("$prefix : $name $suffix");
         }
     }
 
-    public function onChat(ServerChatEvent $event): void {
+    public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
 
@@ -86,10 +83,11 @@ class Main extends PluginBase implements Listener {
 
         $playerGroup = $players[$name]["group"] ?? "Spieler";
         $prefix = $groups[$playerGroup]["prefix"] ?? "§7Spieler";
+        $message = $event->getMessage();
+
         $chatColor = in_array($playerGroup, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
 
-        // Format setzen
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $event->setFormat("$prefix : $name > $chatColor$message");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
