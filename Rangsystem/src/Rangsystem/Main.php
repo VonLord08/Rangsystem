@@ -1,6 +1,6 @@
 <?php
 
-namespace Ranksystem;
+namespace Rangsystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
