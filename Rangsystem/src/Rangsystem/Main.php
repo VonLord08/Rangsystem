@@ -14,14 +14,19 @@ class Main extends PluginBase implements Listener {
 
     private Config $permissionsConfig;
     private array $defaultGroups = [
-        "Spieler" => ["prefix" => "\u00A7f[Spieler]", "suffix" => "", "permissions" => []],
-        "Premium" => ["prefix" => "\u00A76[Premium]", "suffix" => "", "permissions" => []],
-        "Friend" => ["prefix" => "\u00A7d[Friend]", "suffix" => "", "permissions" => []],
-        "Probe-Team" => ["prefix" => "\u00A79[Probe]", "suffix" => "\u00A77[Team]", "permissions" => []],
-        "Supporter" => ["prefix" => "\u00A71[Supporter]", "suffix" => "\u00A77[Team]", "permissions" => []],
-        "Moderator" => ["prefix" => "\u00A7c[Mod]", "suffix" => "\u00A77[Team]", "permissions" => []],
-        "Admin" => ["prefix" => "\u00A74[Admin]", "suffix" => "\u00A77[Team]", "permissions" => []],
-        "Leitung" => ["prefix" => "\u00A7e[Leitung]", "suffix" => "\u00A77[Team]", "permissions" => []]
+        "Spieler" => ["prefix" => "§7[Spieler]", "suffix" => "", "permissions" => []],
+        "Premium" => ["prefix" => "§6[Premium]", "suffix" => "", "permissions" => []],
+        "Friend" => ["prefix" => "§5[Friend]", "suffix" => "", "permissions" => []],
+        "Probe-Team" => ["prefix" => "§3[Probe-Team]", "suffix" => "§c", "permissions" => []],
+        "Supporter" => ["prefix" => "§2[Supporter]", "suffix" => "§c", "permissions" => []],
+        "Supporter+" => ["prefix" => "§2[Supporter§4+]", "suffix" => "§c", "permissions" => []],
+        "Moderator" => ["prefix" => "§2[Moderator]", "suffix" => "§c", "permissions" => []],
+        "Moderator+" => ["prefix" => "§2[Moderator§4+]", "suffix" => "§c", "permissions" => []],
+        "Content" => ["prefix" => "§e[Content]", "suffix" => "§c", "permissions" => []],
+        "SysDev" => ["prefix" => "§b[SysDev]", "suffix" => "§c", "permissions" => []],
+        "Admin" => ["prefix" => "§4[Admin]", "suffix" => "§c", "permissions" => []],
+        "Head-Admin" => ["prefix" => "§4[Head-Admin]", "suffix" => "§c", "permissions" => []],
+        "Leitung" => ["prefix" => "§4[Leitung]", "suffix" => "§c", "permissions" => []]
     ];
 
     public function onEnable(): void {
@@ -32,7 +37,7 @@ class Main extends PluginBase implements Listener {
             $this->permissionsConfig->set("groups", $this->defaultGroups);
             $this->permissionsConfig->save();
         }
-
+        
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
@@ -49,8 +54,8 @@ class Main extends PluginBase implements Listener {
             $this->permissionsConfig->save();
         }
 
-        $playerGroup = $players[$name]["group"] ?? "Spieler";
-
+        $playerGroup = $players[$name]["group"];
+        
         if (isset($groups[$playerGroup])) {
             $prefix = $groups[$playerGroup]["prefix"];
             $suffix = $groups[$playerGroup]["suffix"];
@@ -60,11 +65,6 @@ class Main extends PluginBase implements Listener {
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
-        if (!$sender instanceof Player) {
-            $sender->sendMessage("Dieser Befehl kann nur im Spiel verwendet werden.");
-            return false;
-        }
-
         if ($command->getName() === "setgroup") {
             if (count($args) < 2) {
                 $sender->sendMessage("§cBenutzung: /setgroup <Spieler> <Gruppe>");
@@ -88,6 +88,10 @@ class Main extends PluginBase implements Listener {
             $sender->sendMessage("§aDer Spieler $playerName wurde der Gruppe $groupName zugewiesen.");
             return true;
         }
+        return false;
+    }
+}
+
         return false;
     }
 }
