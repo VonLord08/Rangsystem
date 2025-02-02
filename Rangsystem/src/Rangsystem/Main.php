@@ -5,11 +5,12 @@ namespace Rangsystem;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\event\server\MessageSendEvent;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
 
 class Main extends PluginBase implements Listener {
+    
     private Config $permissionsConfig;
     private array $defaultGroups = [
         "Spieler" => ["prefix" => "§7Spieler", "suffix" => "", "permissions" => []],
@@ -26,37 +27,32 @@ class Main extends PluginBase implements Listener {
         "Head-Admin" => ["prefix" => "§4Head-Admin", "suffix" => "§c[Team]", "permissions" => []],
         "Leitung" => ["prefix" => "§4Leitung", "suffix" => "§c[Team]", "permissions" => []]
     ];
-
+    
     public function onEnable(): void {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
     }
-
-    public function onJoin(PlayerJoinEvent $event): void {
+    
+    public function onPlayerJoin(PlayerJoinEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-
+        
         if (!$this->permissionsConfig->exists($name)) {
             $this->permissionsConfig->set($name, "Spieler");
             $this->permissionsConfig->save();
         }
-
-        $group = $this->permissionsConfig->get($name);
+    }
+    
+    public function onChat(MessageSendEvent $event): void {
+        $player = $event->getSender();
+        if (!$player instanceof Player) return;
+        
+        $name = $player->getName();
+        $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"];
         $suffix = $this->defaultGroups[$group]["suffix"];
-
-        $player->setNameTag("$prefix : $name $suffix");
-    }
-
-    public function onChat(PlayerChatEvent $event): void {
-        $player = $event->getPlayer();
-        $name = $player->getName();
-        $group = $this->permissionsConfig->get($name);
-        $prefix = $this->defaultGroups[$group]["prefix"];
         
-        // Chat-Nachrichten Farbe setzen
-        $chatColor = isset($this->defaultGroups[$group]["suffix"]) ? "§f" : "§7";
-
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $chatColor = in_array($group, ["Spieler", "Premium", "Friend"]) ? "§7" : "§f";
+        $event->setMessage("$prefix : $name $suffix > $chatColor" . $event->getMessage());
     }
 }
