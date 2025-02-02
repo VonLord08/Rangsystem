@@ -10,7 +10,6 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
-use pocketmine\Server;
 
 class Main extends PluginBase implements Listener {
     
@@ -20,14 +19,14 @@ class Main extends PluginBase implements Listener {
         "Premium" => ["prefix" => "§6Premium", "suffix" => "", "permissions" => []],
         "Friend" => ["prefix" => "§5Friend", "suffix" => "", "permissions" => []],
         "Probe-Team" => ["prefix" => "§3Probe-Team", "suffix" => "§c[Team]", "permissions" => []],
-        "Supporter" => ["prefix" => "§2Supporter", "suffix" => "§c[Team]", "permissions" => []],
-        "SrSupporter" => ["prefix" => "§2SrSupporter", "suffix" => "§c[Team]", "permissions" => []],
-        "Moderator" => ["prefix" => "§2Moderator", "suffix" => "§c[Team]", "permissions" => []],
-        "SrModerator" => ["prefix" => "§2SrModerator", "suffix" => "§c[Team]", "permissions" => []],
+        "Supporter" => ["prefix" => "§2Sup", "suffix" => "§c[Team]", "permissions" => []],
+        "SrSupporter" => ["prefix" => "§2SrSup", "suffix" => "§c[Team]", "permissions" => []],
+        "Moderator" => ["prefix" => "§2Mod", "suffix" => "§c[Team]", "permissions" => []],
+        "SrModerator" => ["prefix" => "§2SrMod", "suffix" => "§c[Team]", "permissions" => []],
         "Content" => ["prefix" => "§eContent", "suffix" => "§c[Team]", "permissions" => []],
         "SysDev" => ["prefix" => "§bSysDev", "suffix" => "§c[Team]", "permissions" => []],
         "Admin" => ["prefix" => "§4Admin", "suffix" => "§c[Team]", "permissions" => []],
-        "Head-Admin" => ["prefix" => "§4Head-Admin", "suffix" => "§c[Team]", "permissions" => []],
+        "Head-Admin" => ["prefix" => "§4H-Admin", "suffix" => "§c[Team]", "permissions" => []],
         "Leitung" => ["prefix" => "§4Leitung", "suffix" => "§c[Team]", "permissions" => []]
     ];
 
@@ -56,34 +55,15 @@ class Main extends PluginBase implements Listener {
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        
-        // Nachricht manuell senden, anstatt setFormat() zu nutzen
-        $message = "$prefix : $name > $chatColor" . $event->getMessage();
-        Server::getInstance()->broadcastMessage($message);
-
-        // Verhindert die doppelte Nachricht
-        $event->cancel();
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
     }
 
     private function updateNametag(Player $player): void {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
-
-        // Anpassung der Nametag-Anzeige für bestimmte Gruppen
-        $specialTags = [
-            "Supporter" => "§2Sup",
-            "SrSupporter" => "§2SrSup",
-            "Moderator" => "§2Mod",
-            "SrModerator" => "§2SrMod"
-        ];
-
-        if (isset($specialTags[$group])) {
-            $player->setNameTag($specialTags[$group] . " : " . $name);
-        } else {
-            $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
-            $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-            $player->setNameTag("$prefix : $name $suffix");
-        }
+        $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
+        $player->setNameTag("$prefix : $name $suffix");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
