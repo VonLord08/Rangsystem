@@ -1,6 +1,6 @@
 <?php
 
-namespace Rangsystem;
+namespace Ranksystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
@@ -20,9 +20,9 @@ class Main extends PluginBase implements Listener {
         "Friend" => ["prefix" => "§5Friend", "suffix" => "", "permissions" => []],
         "Probe-Team" => ["prefix" => "§3Probe-Team", "suffix" => "§c[Team]", "permissions" => []],
         "Supporter" => ["prefix" => "§2Supporter", "suffix" => "§c[Team]", "permissions" => []],
-        "Supporter+" => ["prefix" => "§2Supporter§4+", "suffix" => "§c[Team]", "permissions" => []],
+        "SrSupporter" => ["prefix" => "§2SrSupporter", "suffix" => "§c[Team]", "permissions" => []],
         "Moderator" => ["prefix" => "§2Moderator", "suffix" => "§c[Team]", "permissions" => []],
-        "Moderator+" => ["prefix" => "§2Moderator§4+", "suffix" => "§c[Team]", "permissions" => []],
+        "SrModerator" => ["prefix" => "§2SrModerator", "suffix" => "§c[Team]", "permissions" => []],
         "Content" => ["prefix" => "§eContent", "suffix" => "§c[Team]", "permissions" => []],
         "SysDev" => ["prefix" => "§bSysDev", "suffix" => "§c[Team]", "permissions" => []],
         "Admin" => ["prefix" => "§4Admin", "suffix" => "§c[Team]", "permissions" => []],
@@ -55,18 +55,28 @@ class Main extends PluginBase implements Listener {
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $message = "$prefix : $name > $chatColor" . $event->getMessage();
-
-        $event->cancel(); // Standardausgabe des Chats verhindern
-        $this->getServer()->broadcastMessage($message);
+        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
     }
 
     private function updateNametag(Player $player): void {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
-        $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
-        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-        $player->setNameTag("$prefix : $name $suffix");
+
+        // Anpassung der Nametag-Anzeige für bestimmte Gruppen
+        $specialTags = [
+            "Supporter" => "§2Sup",
+            "SrSupporter" => "§2SrSup",
+            "Moderator" => "§2Mod",
+            "SrModerator" => "§2SrMod"
+        ];
+
+        if (isset($specialTags[$group])) {
+            $player->setNameTag($specialTags[$group] . " : " . $name);
+        } else {
+            $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+            $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
+            $player->setNameTag("$prefix : $name $suffix");
+        }
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
