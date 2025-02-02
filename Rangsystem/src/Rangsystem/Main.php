@@ -14,7 +14,6 @@ use pocketmine\utils\Config;
 class Main extends PluginBase implements Listener {
 
     private Config $permissionsConfig;
-
     private array $defaultGroups = [
         "Spieler" => ["prefix" => "§7Spieler", "suffix" => "", "permissions" => []],
         "Premium" => ["prefix" => "§6Premium", "suffix" => "", "permissions" => []],
@@ -32,14 +31,14 @@ class Main extends PluginBase implements Listener {
     ];
 
     public function onEnable(): void {
-        $this->getLogger()->info("Rangsystem wurde erfolgreich geladen!");
+        $this->getLogger()->info("Rangsystem wurde aktiviert!");
         $this->permissionsConfig = new Config($this->getDataFolder() . "permissions.yml", Config::YAML);
-
+        
         if (!$this->permissionsConfig->exists("groups")) {
             $this->permissionsConfig->set("groups", $this->defaultGroups);
             $this->permissionsConfig->save();
         }
-
+        
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
@@ -49,66 +48,31 @@ class Main extends PluginBase implements Listener {
 
         $groups = $this->permissionsConfig->get("groups", []);
         $players = $this->permissionsConfig->get("players", []);
-
-        // Standard-Gruppe setzen, falls Spieler noch keine hat
-        if (!isset($players[$name])) {
-            $players[$name] = ["group" => "Spieler"];
-            $this->permissionsConfig->set("players", $players);
-            $this->permissionsConfig->save();
+        
+        $playerGroup = $players[$name]["group"] ?? "Spieler";
+        
+        if (isset($groups[$playerGroup])) {
+            $prefix = $groups[$playerGroup]["prefix"];
+            $suffix = $groups[$playerGroup]["suffix"];
+            $player->setDisplayName("$prefix : $name");
+            $player->setNameTag("$prefix : $name $suffix");
         }
-
-        $playerGroup = $players[$name]["group"];
-        $prefix = $groups[$playerGroup]["prefix"] ?? "§7Spieler";
-        $suffix = $groups[$playerGroup]["suffix"] ?? "";
-
-        // Chat-Namen & Nametag setzen
-        $player->setDisplayName("$prefix : $name");
-        $player->setNameTag("$prefix : $name $suffix");
     }
 
-    public function onChat(PlayerChatEvent $event): void {
-        $player = $event->getSender(); 
+    public function onPlayerChat(PlayerChatEvent $event): void {
+        $player = $event->getPlayer();
         $name = $player->getName();
-
-        $players = $this->permissionsConfig->get("players", []);
-        $groups = $this->permissionsConfig->get("groups", []);
-
-        $playerGroup = $players[$name]["group"] ?? "Spieler";
-        $prefix = $groups[$playerGroup]["prefix"] ?? "§7Spieler";
         $message = $event->getMessage();
 
-        // Team-Ränge erhalten §f für Nachrichten, normale Spieler §7
-        $chatColor = in_array($playerGroup, ["Probe-Team", "Supporter", "Supporter+", "Moderator", "Moderator+", "Content", "SysDev", "Admin", "Head-Admin", "Leitung"]) ? "§f" : "§7";
-
-        // Setzt das neue Chat-Format richtig
-        $event->setNewMessage("$prefix : $name > $chatColor$message");
-    }
-
-    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
-        if ($command->getName() === "setgroup") {
-            if (count($args) < 2) {
-                $sender->sendMessage("§cBenutzung: /setgroup <Spieler> <Gruppe>");
-                return false;
-            }
-
-            $playerName = $args[0];
-            $groupName = $args[1];
-            $groups = $this->permissionsConfig->get("groups", []);
-
-            if (!isset($groups[$groupName])) {
-                $sender->sendMessage("§cDie Gruppe $groupName existiert nicht.");
-                return false;
-            }
-
-            $players = $this->permissionsConfig->get("players", []);
-            $players[$playerName] = ["group" => $groupName];
-            $this->permissionsConfig->set("players", $players);
-            $this->permissionsConfig->save();
-
-            $sender->sendMessage("§aDer Spieler $playerName wurde der Gruppe $groupName zugewiesen.");
-            return true;
+        $groups = $this->permissionsConfig->get("groups", []);
+        $players = $this->permissionsConfig->get("players", []);
+        
+        $playerGroup = $players[$name]["group"] ?? "Spieler";
+        
+        if (isset($groups[$playerGroup])) {
+            $prefix = $groups[$playerGroup]["prefix"];
+            $chatColor = (strpos($prefix, "§c[Team]") !== false) ? "§f" : "§7";
+            $event->setFormat("$prefix : $name > $chatColor$message");
         }
-
-        return false;
     }
 }
