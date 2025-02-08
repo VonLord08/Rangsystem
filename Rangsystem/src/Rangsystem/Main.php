@@ -15,19 +15,19 @@ class Main extends PluginBase implements Listener {
     
     private Config $permissionsConfig;
     private array $defaultGroups = [
-        "Spieler" => ["prefix" => "§7Spieler", "nametag" => "§7Spieler", "suffix" => "", "permissions" => []],
-        "Premium" => ["prefix" => "§6Premium", "nametag" => "§6Premium", "suffix" => "", "permissions" => []],
-        "Friend" => ["prefix" => "§5Friend", "nametag" => "§5Friend", "suffix" => "", "permissions" => []],
-        "Probe-Team" => ["prefix" => "§3Probe-Team", "nametag" => "§3Probe-Team", "suffix" => "§c[Team]", "permissions" => []],
-        "Supporter" => ["prefix" => "§2Supporter", "nametag" => "§2Sup", "suffix" => "§c[Team]", "permissions" => []],
-        "SrSupporter" => ["prefix" => "§2SrSupporter", "nametag" => "§2SrSup", "suffix" => "§c[Team]", "permissions" => []],
-        "Moderator" => ["prefix" => "§2Moderator", "nametag" => "§2Mod", "suffix" => "§c[Team]", "permissions" => []],
-        "SrModerator" => ["prefix" => "§2SrModerator", "nametag" => "§2SrMod", "suffix" => "§c[Team]", "permissions" => []],
-        "Content" => ["prefix" => "§eContent", "nametag" => "§eContent", "suffix" => "§c[Team]", "permissions" => []],
-        "SysDev" => ["prefix" => "§bSysDev", "nametag" => "§bSysDev", "suffix" => "§c[Team]", "permissions" => []],
-        "Admin" => ["prefix" => "§4Admin", "nametag" => "§4Admin", "suffix" => "§c[Team]", "permissions" => []],
-        "Head-Admin" => ["prefix" => "§4Head-Admin", "nametag" => "§4H-Admin", "suffix" => "§c[Team]", "permissions" => []],
-        "Leitung" => ["prefix" => "§4Leitung", "nametag" => "§4Leitung", "suffix" => "§c[Team]", "permissions" => []]
+        "Spieler" => ["prefix" => "§7Spieler", "suffix" => "", "nametag" => "§7Spieler"],
+        "Premium" => ["prefix" => "§6Premium", "suffix" => "", "nametag" => "§6Premium"],
+        "Friend" => ["prefix" => "§5Friend", "suffix" => "", "nametag" => "§5Friend"],
+        "Probe-Team" => ["prefix" => "§3Probe-Team", "suffix" => "§c[Team]", "nametag" => "§3Probe-Team"],
+        "Supporter" => ["prefix" => "§2Supporter", "suffix" => "§c[Team]", "nametag" => "§2Sup"],
+        "SrSupporter" => ["prefix" => "§2SrSupporter", "suffix" => "§c[Team]", "nametag" => "§2SrSup"],
+        "Moderator" => ["prefix" => "§2Moderator", "suffix" => "§c[Team]", "nametag" => "§2Mod"],
+        "SrModerator" => ["prefix" => "§2SrModerator", "suffix" => "§c[Team]", "nametag" => "§2SrMod"],
+        "Content" => ["prefix" => "§eContent", "suffix" => "§c[Team]", "nametag" => "§eContent"],
+        "SysDev" => ["prefix" => "§bSysDev", "suffix" => "§c[Team]", "nametag" => "§bSysDev"],
+        "Admin" => ["prefix" => "§4Admin", "suffix" => "§c[Team]", "nametag" => "§4Admin"],
+        "Head-Admin" => ["prefix" => "§4Head-Admin", "suffix" => "§c[Team]", "nametag" => "§4H-Admin"],
+        "Leitung" => ["prefix" => "§4Leitung", "suffix" => "§c[Team]", "nametag" => "§4Leitung"]
     ];
 
     public function onEnable(): void {
@@ -52,96 +52,101 @@ class Main extends PluginBase implements Listener {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
-
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix $name > $chatColor" . $event->getMessage());
+
+        // Senden der Chat-Nachricht mit Broadcast
+        $this->getServer()->broadcastMessage("$prefix §r$name > $chatColor" . $event->getMessage());
+
+        // Chat-Nachricht verhindern (damit keine doppelte Nachricht kommt)
+        $event->cancel();
     }
 
     private function updateNametag(Player $player): void {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
         $nametag = $this->defaultGroups[$group]["nametag"] ?? "";
-        $suffix = $this->permissionsConfig->getNested("$name.suffix", "");
+        $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
         $player->setNameTag("$nametag : $name $suffix");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
-        if ($command->getName() === "listgroups") {
-            $sender->sendMessage("§aVerfügbare Gruppen: §e" . implode(", ", array_keys($this->defaultGroups)));
-            return true;
-        }
-
         if (!$sender instanceof Player) return false;
 
         $name = $sender->getName();
 
-        if ($command->getName() === "setgroup" && count($args) >= 2) {
-            $targetName = $args[0];
-            $newGroup = $args[1];
+        switch ($command->getName()) {
+            case "setgroup":
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cVerwendung: /setgroup <Spieler> <Gruppe>");
+                    return false;
+                }
 
-            if (!isset($this->defaultGroups[$newGroup])) {
-                $sender->sendMessage("§cDiese Gruppe existiert nicht.");
-                return false;
-            }
+                $targetName = $args[0];
+                $newGroup = $args[1];
 
-            $this->permissionsConfig->set($targetName, $newGroup);
-            $this->permissionsConfig->save();
+                if (!isset($this->defaultGroups[$newGroup])) {
+                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
+                    return false;
+                }
 
-            $target = $this->getServer()->getPlayerExact($targetName);
-            if ($target) {
-                $this->updateNametag($target);
-            }
+                $this->permissionsConfig->set($targetName, $newGroup);
+                $this->permissionsConfig->save();
 
-            $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
-            return true;
-        }
+                $target = $this->getServer()->getPlayerExact($targetName);
+                if ($target) {
+                    $this->updateNametag($target);
+                }
 
-        if ($command->getName() === "setprefix" && count($args) >= 2) {
-            $targetName = $args[0];
-            $newPrefix = implode(" ", array_slice($args, 1));
+                $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
+                return true;
 
-            $this->permissionsConfig->setNested("$targetName.prefix", $newPrefix);
-            $this->permissionsConfig->save();
+            case "listgroups":
+                $groups = implode(", ", array_keys($this->defaultGroups));
+                $sender->sendMessage("§aVerfügbare Gruppen: §e$groups");
+                return true;
 
-            $target = $this->getServer()->getPlayerExact($targetName);
-            if ($target) {
-                $this->updateNametag($target);
-            }
+            case "setprefix":
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cVerwendung: /setprefix <Spieler> <Prefix>");
+                    return false;
+                }
 
-            $sender->sendMessage("§aPrefix für §e$targetName §awurde zu §e$newPrefix §ageändert.");
-            return true;
-        }
+                $targetName = $args[0];
+                $newPrefix = $args[1];
 
-        if ($command->getName() === "setsuffix" && count($args) >= 2) {
-            $targetName = $args[0];
-            $newSuffix = implode(" ", array_slice($args, 1));
+                $this->defaultGroups[$targetName]["prefix"] = $newPrefix;
+                $sender->sendMessage("§aPrefix für §e$targetName §awurde zu §e$newPrefix §ageändert.");
+                return true;
 
-            $this->permissionsConfig->setNested("$targetName.suffix", $newSuffix);
-            $this->permissionsConfig->save();
+            case "setsuffix":
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cVerwendung: /setsuffix <Spieler> <Suffix>");
+                    return false;
+                }
 
-            $target = $this->getServer()->getPlayerExact($targetName);
-            if ($target) {
-                $this->updateNametag($target);
-            }
+                $targetName = $args[0];
+                $newSuffix = $args[1];
 
-            $sender->sendMessage("§aSuffix für §e$targetName §awurde zu §e$newSuffix §ageändert.");
-            return true;
-        }
+                $this->defaultGroups[$targetName]["suffix"] = $newSuffix;
+                $sender->sendMessage("§aSuffix für §e$targetName §awurde zu §e$newSuffix §ageändert.");
+                return true;
 
-        if ($command->getName() === "whois" && count($args) >= 1) {
-            $targetName = $args[0];
+            case "whois":
+                if (count($args) < 1) {
+                    $sender->sendMessage("§cVerwendung: /whois <Spieler>");
+                    return false;
+                }
 
-            if (!$this->permissionsConfig->exists($targetName)) {
-                $sender->sendMessage("§cSpieler nicht gefunden.");
-                return false;
-            }
+                $targetName = $args[0];
+                $group = $this->permissionsConfig->get($targetName, "Spieler");
+                $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+                $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
 
-            $group = $this->permissionsConfig->get($targetName, "Spieler");
-            $prefix = $this->permissionsConfig->getNested("$targetName.prefix", $this->defaultGroups[$group]["prefix"] ?? "");
-            $suffix = $this->permissionsConfig->getNested("$targetName.suffix", "");
-
-            $sender->sendMessage("§aSpieler: §e$targetName\n§aGruppe: §e$group\n§aPrefix: §e$prefix\n§aSuffix: §e$suffix");
-            return true;
+                $sender->sendMessage("§aSpieler: §e$targetName");
+                $sender->sendMessage("§aGruppe: §e$group");
+                $sender->sendMessage("§aPrefix: §e$prefix");
+                $sender->sendMessage("§aSuffix: §e$suffix");
+                return true;
         }
 
         return false;
