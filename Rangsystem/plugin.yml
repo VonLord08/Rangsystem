@@ -1,7 +1,7 @@
 name: Rangsystem
 main: Rangsystem\Main
 version: 1.0.0
-api: 4.0.0
+api: 5.0.0
 author: L44
 description: Ein Rangsystem mit Gruppen, Prefixen & Suffixen
 
