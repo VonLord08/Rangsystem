@@ -53,7 +53,7 @@ class Main extends PluginBase implements Listener {
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
 
-        $message = "§f$prefix : $name > " . $event->getMessage();
+        $message = "§f$prefix : $name > §f" . $event->getMessage();
         $event->cancel();
         $this->getServer()->broadcastMessage($message);
     }
@@ -88,6 +88,25 @@ class Main extends PluginBase implements Listener {
                     $this->updateNametag($target);
                 }
                 $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
+                return true;
+
+            case "addperm":
+                if (count($args) < 2) return false;
+                $group = $args[0];
+                $permission = $args[1];
+                if (!isset($this->defaultGroups[$group])) return false;
+                $this->defaultGroups[$group]["permissions"][] = $permission;
+                $sender->sendMessage("§aErfolgreich die Permission '$permission' zur Gruppe '$group' hinzugefügt.");
+                return true;
+
+            case "removeperm":
+                if (count($args) < 2) return false;
+                $group = $args[0];
+                $permission = $args[1];
+                if (!isset($this->defaultGroups[$group])) return false;
+                $key = array_search($permission, $this->defaultGroups[$group]["permissions"]);
+                if ($key !== false) unset($this->defaultGroups[$group]["permissions"][$key]);
+                $sender->sendMessage("§cErfolgreich die Permission '$permission' von Gruppe '$group' entfernt.");
                 return true;
 
             case "whois":
