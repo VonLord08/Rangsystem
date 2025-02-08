@@ -41,7 +41,7 @@ class Main extends PluginBase implements Listener {
         $name = $player->getName();
 
         if (!$this->permissionsConfig->exists($name)) {
-            $this->permissionsConfig->set($name, "Spieler");
+            $this->permissionsConfig->set($name, ["group" => "Spieler", "permissions" => []]);
             $this->permissionsConfig->save();
         }
         $this->updateNametag($player);
@@ -50,54 +50,101 @@ class Main extends PluginBase implements Listener {
     public function onChat(PlayerChatEvent $event): void {
         $player = $event->getPlayer();
         $name = $player->getName();
-        $group = $this->permissionsConfig->get($name, "Spieler");
+        $data = $this->permissionsConfig->get($name, ["group" => "Spieler", "permissions" => []]);
+        $group = $data["group"];
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
-
-        $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $message = "$prefix : $name > $chatColor" . $event->getMessage();
+        
+        $message = $event->getMessage();
+        $this->getServer()->broadcastMessage("$prefix : $name > §7$message");
         $event->cancel();
-        $this->getServer()->broadcastMessage($message);
     }
 
     private function updateNametag(Player $player): void {
         $name = $player->getName();
-        $group = $this->permissionsConfig->get($name, "Spieler");
-        $prefix = $this->defaultGroups[$group]["nametag"] ?? $this->defaultGroups[$group]["prefix"];
+        $data = $this->permissionsConfig->get($name, ["group" => "Spieler", "permissions" => []]);
+        $group = $data["group"];
+        $nametag = $this->defaultGroups[$group]["nametag"] ?? $this->defaultGroups[$group]["prefix"] ?? "";
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-        $player->setNameTag("$prefix : $name $suffix");
+        $player->setNameTag("$nametag : $name $suffix");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if (!$sender instanceof Player) return false;
-        
+
         switch ($command->getName()) {
             case "setgroup":
-                if (count($args) < 2) return false;
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cBenutzung: /setgroup <Spieler> <Gruppe>");
+                    return false;
+                }
                 $targetName = $args[0];
                 $newGroup = $args[1];
-                if (!isset($this->defaultGroups[$newGroup])) return false;
-                $this->permissionsConfig->set($targetName, $newGroup);
+
+                if (!isset($this->defaultGroups[$newGroup])) {
+                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
+                    return false;
+                }
+
+                $this->permissionsConfig->set($targetName, ["group" => $newGroup, "permissions" => []]);
                 $this->permissionsConfig->save();
+
                 $target = $this->getServer()->getPlayerExact($targetName);
-                if ($target) $this->updateNametag($target);
+                if ($target) {
+                    $this->updateNametag($target);
+                }
+
+                $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
                 return true;
-            
+
             case "addperm":
-                if (count($args) < 2) return false;
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cBenutzung: /addperm <Gruppe> <Permission>");
+                    return false;
+                }
                 $group = $args[0];
                 $permission = $args[1];
-                if (!isset($this->defaultGroups[$group])) return false;
-                $this->defaultGroups[$group]["permissions"][] = $permission;
+
+                if (!isset($this->defaultGroups[$group])) {
+                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
+                    return false;
+                }
+
+                $permissions = $this->permissionsConfig->getNested("$group.permissions", []);
+                if (!in_array($permission, $permissions)) {
+                    $permissions[] = $permission;
+                    $this->permissionsConfig->setNested("$group.permissions", $permissions);
+                    $this->permissionsConfig->save();
+                    $sender->sendMessage("§aDie Permission §e$permission §awurde der Gruppe §e$group §ahinzugefügt.");
+                } else {
+                    $sender->sendMessage("§cDiese Permission existiert bereits in der Gruppe.");
+                }
                 return true;
-            
+
             case "removeperm":
-                if (count($args) < 2) return false;
+                if (count($args) < 2) {
+                    $sender->sendMessage("§cBenutzung: /removeperm <Gruppe> <Permission>");
+                    return false;
+                }
                 $group = $args[0];
                 $permission = $args[1];
-                if (!isset($this->defaultGroups[$group])) return false;
-                $this->defaultGroups[$group]["permissions"] = array_diff($this->defaultGroups[$group]["permissions"], [$permission]);
+
+                if (!isset($this->defaultGroups[$group])) {
+                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
+                    return false;
+                }
+
+                $permissions = $this->permissionsConfig->getNested("$group.permissions", []);
+                if (in_array($permission, $permissions)) {
+                    $permissions = array_diff($permissions, [$permission]);
+                    $this->permissionsConfig->setNested("$group.permissions", array_values($permissions));
+                    $this->permissionsConfig->save();
+                    $sender->sendMessage("§aDie Permission §e$permission §awurde von der Gruppe §e$group §aentfernt.");
+                } else {
+                    $sender->sendMessage("§cDiese Permission existiert nicht in der Gruppe.");
+                }
                 return true;
         }
+
         return false;
     }
 }
