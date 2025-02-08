@@ -21,15 +21,21 @@ commands:
     usage: /removeperm <Gruppe> <Permission>
     permission: rangsystem.removeperm
 
+  whois:
+    description: Zeigt die Informationen eines Spielers an
+    usage: /whois <Spieler>
+    permission: rangsystem.whois
+
 permissions:
   rangsystem.setgroup:
     description: Erlaubt das Setzen einer Gruppe für einen Spieler
     default: op
-
   rangsystem.addperm:
-    description: Erlaubt das Hinzufügen von Berechtigungen zu einer Gruppe
+    description: Erlaubt das Hinzufügen einer Permission zu einer Gruppe
     default: op
-
   rangsystem.removeperm:
-    description: Erlaubt das Entfernen von Berechtigungen aus einer Gruppe
+    description: Erlaubt das Entfernen einer Permission von einer Gruppe
     default: op
+  rangsystem.whois:
+    description: Erlaubt das Anzeigen von Spielerinformationen
+    default: true
