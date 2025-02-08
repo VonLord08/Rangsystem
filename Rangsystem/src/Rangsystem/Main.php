@@ -53,7 +53,7 @@ class Main extends PluginBase implements Listener {
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
 
-        $message = "§f$prefix : $name > §f" . $event->getMessage();
+        $message = "§f$prefix : $name > " . $event->getMessage();
         $event->cancel();
         $this->getServer()->broadcastMessage($message);
     }
