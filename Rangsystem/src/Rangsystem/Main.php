@@ -19,7 +19,7 @@ class Main extends PluginBase implements Listener {
         "Premium" => ["prefix" => "§6Premium", "suffix" => "", "permissions" => []],
         "Friend" => ["prefix" => "§5Friend", "suffix" => "", "permissions" => []],
         "Probe-Team" => ["prefix" => "§3Probe-Team", "suffix" => "§c[Team]", "permissions" => []],
-        "Supporter" => ["prefix" => "§2Supporter", "suffix" => "§c[Team]", "permissions" => []],
+        "Supporter" => ["prefix" => "§2Supporter", "nametag" => "§2Sup", "suffix" => "§c[Team]", "permissions" => []],
         "SrSupporter" => ["prefix" => "§2SrSupporter", "nametag" => "§2SrSup", "suffix" => "§c[Team]", "permissions" => []],
         "Moderator" => ["prefix" => "§2Moderator", "nametag" => "§2Mod", "suffix" => "§c[Team]", "permissions" => []],
         "SrModerator" => ["prefix" => "§2SrModerator", "nametag" => "§2SrMod", "suffix" => "§c[Team]", "permissions" => []],
@@ -52,41 +52,43 @@ class Main extends PluginBase implements Listener {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
-
         $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $event->cancel();
+        $this->getServer()->broadcastMessage("$prefix : $name > $chatColor" . $event->getMessage());
     }
 
     private function updateNametag(Player $player): void {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
-        $prefix = $this->defaultGroups[$group]["nametag"] ?? $this->defaultGroups[$group]["prefix"];
+        $nametag = $this->defaultGroups[$group]["nametag"] ?? $this->defaultGroups[$group]["prefix"];
         $suffix = $this->defaultGroups[$group]["suffix"] ?? "";
-        $player->setNameTag("$prefix : $name $suffix");
+        $player->setNameTag("$nametag : $name $suffix");
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if (!$sender instanceof Player) return false;
-        
-        if ($command->getName() === "setgroup" && count($args) >= 2) {
-            $targetName = $args[0];
-            $newGroup = $args[1];
-            
-            if (!isset($this->defaultGroups[$newGroup])) {
-                $sender->sendMessage("§cDiese Gruppe existiert nicht.");
-                return false;
-            }
-            
-            $this->permissionsConfig->set($targetName, $newGroup);
-            $this->permissionsConfig->save();
-            
-            $target = $this->getServer()->getPlayerExact($targetName);
-            if ($target) {
-                $this->updateNametag($target);
-            }
-            
-            $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
-            return true;
+
+        switch ($command->getName()) {
+            case "setgroup":
+                if (count($args) < 2) return false;
+                $targetName = $args[0];
+                $newGroup = $args[1];
+                if (!isset($this->defaultGroups[$newGroup])) return false;
+                $this->permissionsConfig->set($targetName, $newGroup);
+                $this->permissionsConfig->save();
+                $target = $this->getServer()->getPlayerExact($targetName);
+                if ($target) $this->updateNametag($target);
+                $sender->sendMessage("§aGruppe geändert!");
+                return true;
+            case "listgroups":
+                $sender->sendMessage("§aVerfügbare Gruppen: " . implode(", ", array_keys($this->defaultGroups)));
+                return true;
+            case "whois":
+                if (count($args) < 1) return false;
+                $targetName = $args[0];
+                $group = $this->permissionsConfig->get($targetName, "Spieler");
+                $sender->sendMessage("§a$targetName ist in der Gruppe: $group");
+                return true;
         }
         return false;
     }
