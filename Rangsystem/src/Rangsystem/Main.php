@@ -27,7 +27,7 @@ class Main extends PluginBase implements Listener {
         "Content" => ["prefix" => "§eContent", "suffix" => "§c[Team]", "permissions" => []],
         "SysDev" => ["prefix" => "§bSysDev", "suffix" => "§c[Team]", "permissions" => []],
         "Admin" => ["prefix" => "§4Admin", "suffix" => "§c[Team]", "permissions" => []],
-        "Head-Admin" => ["prefix" => "§4H-Admin", "suffix" => "§c[Team]", "permissions" => []],
+        "Head-Admin" => ["prefix" => "§4Head-Admin", "nametag" => "§4H-Admin", "suffix" => "§c[Team]", "permissions" => []],
         "Leitung" => ["prefix" => "§4Leitung", "suffix" => "§c[Team]", "permissions" => []]
     ];
 
