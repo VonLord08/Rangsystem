@@ -53,8 +53,9 @@ class Main extends PluginBase implements Listener {
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
         
-        $chatColor = (strpos($group, "Team") !== false) ? "§f" : "§7";
-        $event->setFormat("$prefix : $name > $chatColor" . $event->getMessage());
+        $message = "§f$prefix : $name > " . $event->getMessage();
+        $event->cancel();
+        $this->getServer()->broadcastMessage($message);
     }
 
     private function updateNametag(Player $player): void {
@@ -73,37 +74,19 @@ class Main extends PluginBase implements Listener {
                 if (count($args) < 2) return false;
                 $targetName = $args[0];
                 $newGroup = $args[1];
-                if (!isset($this->defaultGroups[$newGroup])) {
-                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
-                    return false;
-                }
+                if (!isset($this->defaultGroups[$newGroup])) return false;
                 $this->permissionsConfig->set($targetName, $newGroup);
                 $this->permissionsConfig->save();
                 $target = $this->getServer()->getPlayerExact($targetName);
                 if ($target) $this->updateNametag($target);
-                $sender->sendMessage("§aDie Gruppe von §e$targetName §awurde zu §e$newGroup §ageändert.");
                 return true;
-            case "addperm":
-                if (count($args) < 2) return false;
-                $group = $args[0];
-                $perm = $args[1];
-                if (!isset($this->defaultGroups[$group])) {
-                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
-                    return false;
-                }
-                $this->defaultGroups[$group]["permissions"][] = $perm;
-                $sender->sendMessage("§aBerechtigung §e$perm §afür Gruppe §e$group §ahinzugefügt.");
+
+            case "whois":
+                $sender->sendMessage("§aDeine Gruppe: " . $this->permissionsConfig->get($sender->getName(), "Spieler"));
                 return true;
-            case "removeperm":
-                if (count($args) < 2) return false;
-                $group = $args[0];
-                $perm = $args[1];
-                if (!isset($this->defaultGroups[$group])) {
-                    $sender->sendMessage("§cDiese Gruppe existiert nicht.");
-                    return false;
-                }
-                $this->defaultGroups[$group]["permissions"] = array_diff($this->defaultGroups[$group]["permissions"], [$perm]);
-                $sender->sendMessage("§cBerechtigung §e$perm §cvon Gruppe §e$group §centfernt.");
+
+            case "listgroups":
+                $sender->sendMessage("§aVerfügbare Gruppen: " . implode(", ", array_keys($this->defaultGroups)));
                 return true;
         }
         return false;
