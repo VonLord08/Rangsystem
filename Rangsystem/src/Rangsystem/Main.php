@@ -52,10 +52,13 @@ class Main extends PluginBase implements Listener {
         $name = $player->getName();
         $group = $this->permissionsConfig->get($name, "Spieler");
         $prefix = $this->defaultGroups[$group]["prefix"] ?? "";
+
+        $chatColor = "§7";
+        $message = $event->getMessage();
+        $formattedMessage = "$prefix : $name > $chatColor$message";
         
-        $message = "§f$prefix : $name > " . $event->getMessage();
         $event->cancel();
-        $this->getServer()->broadcastMessage($message);
+        $this->getServer()->broadcastMessage($formattedMessage);
     }
 
     private function updateNametag(Player $player): void {
@@ -80,13 +83,11 @@ class Main extends PluginBase implements Listener {
                 $target = $this->getServer()->getPlayerExact($targetName);
                 if ($target) $this->updateNametag($target);
                 return true;
-
-            case "whois":
-                $sender->sendMessage("§aDeine Gruppe: " . $this->permissionsConfig->get($sender->getName(), "Spieler"));
+            case "addperm":
+                if (count($args) < 2) return false;
                 return true;
-
-            case "listgroups":
-                $sender->sendMessage("§aVerfügbare Gruppen: " . implode(", ", array_keys($this->defaultGroups)));
+            case "removeperm":
+                if (count($args) < 2) return false;
                 return true;
         }
         return false;
