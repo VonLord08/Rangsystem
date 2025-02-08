@@ -1,44 +1,35 @@
 name: Rangsystem
-main: Rangsystem\Main
 version: 1.0.0
+main: Rangsystem\Main
 api: 5.0.0
 author: L44
-description: Ein Rangsystem mit Gruppen, Prefixen & Suffixen
+description: Ein Rangsystem mit Permissions und individuellem Prefix/Suffix
 
 commands:
   setgroup:
-    description: Setzt die Gruppe eines Spielers.
-    usage: "/setgroup <Spieler> <Gruppe>"
+    description: Weist einem Spieler eine Gruppe zu
+    usage: /setgroup <Spieler> <Gruppe>
     permission: rangsystem.setgroup
 
-  listgroups:
-    description: Listet alle Gruppen auf.
-    usage: "/listgroups"
-    permission: rangsystem.listgroups
+  addperm:
+    description: Fügt einer Gruppe eine Permission hinzu
+    usage: /addperm <Gruppe> <Permission>
+    permission: rangsystem.addperm
 
-  whois:
-    description: Zeigt Informationen über einen Spieler.
-    usage: "/whois <Spieler>"
-    permission: rangsystem.whois
-
-  setprefix:
-    description: Ändert den Prefix einer Gruppe.
-    usage: "/setprefix <Gruppe> <Prefix>"
-    permission: rangsystem.setprefix
-
-  setsuffix:
-    description: Ändert den Suffix einer Gruppe.
-    usage: "/setsuffix <Gruppe> <Suffix>"
-    permission: rangsystem.setsuffix
+  removeperm:
+    description: Entfernt eine Permission von einer Gruppe
+    usage: /removeperm <Gruppe> <Permission>
+    permission: rangsystem.removeperm
 
 permissions:
   rangsystem.setgroup:
+    description: Erlaubt das Setzen einer Gruppe für einen Spieler
     default: op
-  rangsystem.listgroups:
-    default: true
-  rangsystem.whois:
-    default: true
-  rangsystem.setprefix:
+
+  rangsystem.addperm:
+    description: Erlaubt das Hinzufügen von Berechtigungen zu einer Gruppe
     default: op
-  rangsystem.setsuffix:
+
+  rangsystem.removeperm:
+    description: Erlaubt das Entfernen von Berechtigungen aus einer Gruppe
     default: op
